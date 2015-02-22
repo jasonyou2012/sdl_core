@@ -1,4 +1,4 @@
-﻿/*
+/*
 * Copyright (c) 2014, Ford Motor Company
 * All rights reserved.
 *
@@ -68,6 +68,7 @@ CREATE_LOGGERPTR_GLOBAL(logger_, "CacheManager")
 
 CacheManager::CacheManager()
   : CacheManagerInterface(),
+    pt_(new policy_table::Table),
     backup_(
 // EXTENDED_POLICY
                      new SQLPTRepresentation()
@@ -822,10 +823,16 @@ bool CacheManager::Init(const std::string& file_name) {
     case InitResult::EXISTS: {
       LOG4CXX_INFO(logger_, "Policy Table exists, was loaded correctly.");
       result = LoadFromBackup();
+      if (result) {
+        MergePreloadPT(file_name);
+      }
     } break;
     case InitResult::SUCCESS: {
       LOG4CXX_INFO(logger_, "Policy Table was inited successfully");
-      result = LoadFromFile(file_name);
+      result = LoadFromFile(file_name, *pt_);
+      if (result) {
+        Backup();
+      }
     } break;
     default: {
       result = false;
@@ -863,9 +870,9 @@ bool CacheManager::LoadFromBackup() {
   return true;
 }
 
-bool CacheManager::LoadFromFile(const std::string& file_name) {
-
-  LOG4CXX_INFO(logger_, "CacheManager::LoadFromFile");
+bool CacheManager::LoadFromFile(const std::string& file_name,
+                                policy_table::Table& table) {
+  LOG4CXX_AUTO_TRACE(logger_);
   BinaryMessage json_string;
   bool final_result = false;
   final_result = file_system::ReadBinaryFile(file_name, json_string);
@@ -878,29 +885,23 @@ bool CacheManager::LoadFromFile(const std::string& file_name) {
   Json::Reader reader(Json::Features::strictMode());
   std::string json(json_string.begin(), json_string.end());
   bool ok = reader.parse(json.c_str(), value);
-  if (ok) {
-    pt_ = new policy_table::Table(&value);
-  } else {
+  if (!ok) {
     LOG4CXX_WARN(logger_, reader.getFormattedErrorMessages());
-  }
-
-  if (!pt_) {
-    LOG4CXX_WARN(logger_, "Failed to parse policy table");
     return false;
   }
 
-  if (!pt_->is_valid()) {
-    rpc::ValidationReport report("policy_table");
-    pt_->ReportErrors(&report);
-    LOG4CXX_WARN(logger_, "Parsed table is not valid " <<
-                 rpc::PrettyFormat(report));
-  }
+  LOG4CXX_TRACE(logger_, "Start create PT");
+  sync_primitives::AutoLock locker(cache_lock_);
 
-  final_result = backup_->Save(*pt_);
-  LOG4CXX_INFO(
-    logger_,
-    "Loading from file was " << (final_result ? "successful" : "unsuccessful"));
-  return final_result;
+  table = policy_table::Table(&value);
+  if (!table.is_valid()) {
+    rpc::ValidationReport report("policy_table");
+    table.ReportErrors(&report);
+    LOG4CXX_FATAL(logger_,
+                  "Parsed table is not valid " << rpc::PrettyFormat(report));
+    return false;
+  }
+  return true;
 }
 
 bool CacheManager::ResetPT(const std::string& file_name) {
@@ -931,4 +932,72 @@ int32_t CacheManager::GenerateHash(const std::string& str_to_hash) {
   return result;
 }
 
+void CacheManager::MergePreloadPT(const std::string& file_name) {
+  LOG4CXX_AUTO_TRACE(logger_);
+  policy_table::Table table;
+  if (!LoadFromFile(file_name, table)) {
+    LOG4CXX_DEBUG(logger_, "Unable to load preloaded PT.");
+  }
+
+  sync_primitives::AutoLock lock(cache_lock_);
+  policy_table::PolicyTable& current = pt_->policy_table;
+  policy_table::PolicyTable& new_table = table.policy_table;
+  if (current.module_config.preloaded_date != new_table.module_config.preloaded_date) {
+    MergeMC(new_table, current);
+    MergeFC(new_table, current);
+    MergeAP(new_table, current);
+    MergeCFM(new_table, current);
+    Backup();
+  }
+}
+
+void CacheManager::MergeMC(const policy_table::PolicyTable& new_pt,
+                           policy_table::PolicyTable& pt) {
+  LOG4CXX_AUTO_TRACE(logger_);
+  policy_table::ModuleConfig copy(pt.module_config);
+
+  pt.module_config = new_pt.module_config;
+  pt.module_config.vehicle_make = copy.vehicle_make;
+  pt.module_config.vehicle_year = copy.vehicle_year;
+  pt.module_config.vehicle_model = copy.vehicle_model;
+}
+
+void CacheManager::MergeFC(const policy_table::PolicyTable& new_pt,
+                           policy_table::PolicyTable& pt) {
+  LOG4CXX_AUTO_TRACE(logger_);
+  policy_table::FunctionalGroupings::const_iterator it = new_pt.functional_groupings.begin();
+
+  for (; it != new_pt.functional_groupings.end(); ++it) {
+    LOG4CXX_DEBUG(logger_, "Merge functional group: " << it->first);
+    pt.functional_groupings[it->first] = it->second;
+  }
+}
+
+void CacheManager::MergeAP(policy_table::PolicyTable new_pt,
+                           policy_table::PolicyTable& pt) {
+  LOG4CXX_AUTO_TRACE(logger_);
+  pt.app_policies[kDeviceId] = new_pt.app_policies[kDeviceId];
+  pt.app_policies[kDefaultId] = new_pt.app_policies[kDefaultId];
+  pt.app_policies[kPreDataConsentId] = new_pt.app_policies[kPreDataConsentId];
+}
+
+void CacheManager::MergeCFM(const policy_table::PolicyTable& new_pt,
+                            policy_table::PolicyTable& pt) {
+  LOG4CXX_AUTO_TRACE(logger_);
+  if (new_pt.consumer_friendly_messages.is_initialized()) {
+    if (!pt.consumer_friendly_messages.is_initialized()) {
+      pt.consumer_friendly_messages = new_pt.consumer_friendly_messages;
+    } else {
+      policy_table::Messages::const_iterator it = new_pt.consumer_friendly_messages->messages->begin();
+
+      pt.consumer_friendly_messages->version =
+          new_pt.consumer_friendly_messages->version;
+      for (; it != pt.consumer_friendly_messages->messages->end(); ++it) {
+        LOG4CXX_DEBUG(logger_, "Merge CFM: " << it->first);
+        (*pt.consumer_friendly_messages->messages)[it->first] = it->second;
+      }
+
+    }
+  }
+}
 }
