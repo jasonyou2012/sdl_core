@@ -477,18 +477,18 @@ bool ApplicationManagerImpl::ActivateApplication(ApplicationSharedPtr app) {
     return false;
   }
 
-  using namespace mobile_api::HMILevel;
-
-  bool is_new_app_media = app->is_media_application();
-  ApplicationSharedPtr current_active_app = active_application();
-
-  if (HMI_LIMITED != app->hmi_level()) {
+  if (mobile_api::HMILevel::eType::HMI_LIMITED != app->hmi_level()) {
     if (app->has_been_activated()) {
       MessageHelper::SendAppDataToHMI(app);
     }
   }
 
-  if (current_active_app) {
+  bool is_new_app_media = app->is_media_application();
+  bool is_new_app_voice = app->is_voice_communication_supported();
+  bool is_new_app_navi = app->is_navi();
+
+  ApplicationSharedPtr current_active_app = active_application();
+  if (current_active_app.valid()) {
     if (is_new_app_media && current_active_app->is_media_application()) {
       MakeAppNotAudible(current_active_app->app_id());
     } else {
@@ -502,15 +502,29 @@ bool ApplicationManagerImpl::ActivateApplication(ApplicationSharedPtr app) {
 
   MakeAppFullScreen(app->app_id());
 
-  if (is_new_app_media) {
-    ApplicationSharedPtr limited_app = get_limited_media_application();
-    if (limited_app ) {
-      if (!limited_app->is_navi()) {
-        MakeAppNotAudible(limited_app->app_id());
-        MessageHelper::SendHMIStatusNotification(*limited_app);
-      } else {
-        app->set_audio_streaming_state(mobile_apis::AudioStreamingState::ATTENUATED);
-        MessageHelper::SendHMIStatusNotification(*app);
+  ApplicationSharedPtr limited_media_app = get_limited_media_application();
+  ApplicationSharedPtr limited_voice_app = get_limited_voice_application();
+  ApplicationSharedPtr limited_navi_app = get_limited_navi_application();
+
+  if (app->IsAudioApplication() && limited_media_app.valid()) {
+    if (limited_media_app->is_navi()) {
+      app->set_audio_streaming_state(AudioStreamingState::ATTENUATED);
+    }
+  }
+
+  if (is_new_app_media && limited_media_app.valid()) {
+    if (!limited_media_app->is_navi()) {
+      MakeAppNotAudible(limited_media_app->app_id());
+      MessageHelper::SendHMIStatusNotification(*limited_media_app);
+    }
+  }
+
+  if (app->is_voice_communication_supported()) {
+    ApplicationSharedPtr limited_app = get_limited_voice_application();
+    if (limited_app.valid()) {
+      if (limited_app->is_media_application()) {
+        limited_app->set_audio_streaming_state(
+            mobile_api::AudioStreamingState::NOT_AUDIBLE);
       }
     }
   }
