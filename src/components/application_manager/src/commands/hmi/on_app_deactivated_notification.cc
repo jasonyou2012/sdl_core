@@ -81,41 +81,18 @@ void OnAppDeactivatedNotification::Run() {
     return;
   }
 
-  eType new_hmi_level = app->hmi_level();
-  switch ((*message_)[strings::msg_params][hmi_request::reason].asInt()) {
-    case hmi_apis::Common_DeactivateReason::AUDIO: {
-      if (app->is_media_application()) {
-        if (profile::Profile::instance()->is_mixing_audio_supported() &&
-            (ApplicationManagerImpl::instance()->vr_session_started() ||
-             app->tts_speak_state())) {
-          app->set_audio_streaming_state(mobile_api::AudioStreamingState::ATTENUATED);
-        } else {
-          app->set_audio_streaming_state(mobile_api::AudioStreamingState::NOT_AUDIBLE);
-        }
-      }
-      // HMI must send this notification for each active app
-      if (app.valid()) {
-        if (Compare<eType, EQ, ONE>(app->hmi_level(), HMI_FULL, HMI_LIMITED)) {
-          new_hmi_level = HMI_BACKGROUND;
-        }
-      }
-      break;
-    }
-    case hmi_apis::Common_DeactivateReason::NAVIGATIONMAP:
-    case hmi_apis::Common_DeactivateReason::PHONEMENU:
-    case hmi_apis::Common_DeactivateReason::SYNCSETTINGS:
-    case hmi_apis::Common_DeactivateReason::GENERAL: {
-      if ((!app->IsAudioApplication()) ||
-          ApplicationManagerImpl::instance()->
-          DoesAudioAppWithSameHMITypeExistInFullOrLimited(app)) {
-        new_hmi_level = HMI_BACKGROUND;
+  if (Common_DeactivateReason::AUDIO == deactivate_reason) {
+    if (app->is_media_application() && !(app->is_navi())) {
+      if (profile::Profile::instance()->is_mixing_audio_supported() &&
+          (ApplicationManagerImpl::instance()->vr_session_started() ||
+          app->tts_speak_state())) {
+        app->set_audio_streaming_state(AudioStreamingState::ATTENUATED);
       } else {
         new_hmi_level = HMI_LIMITED;
       }
-      break;
-    }
-    default: {
-      LOG4CXX_ERROR_EXT(logger_, "Unknown reason of app deactivation");
+      ApplicationManagerImpl::instance()->
+          ChangeAppsHMILevel(app->app_id(), HMILevel::HMI_BACKGROUND);
+      MessageHelper::SendHMIStatusNotification(*app);
       return;
     }
   }
