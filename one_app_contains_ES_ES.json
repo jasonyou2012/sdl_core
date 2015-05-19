@@ -1,0 +1,61 @@
+{
+    "status": "200 ok",
+    "responseType": "array",
+    "response": [
+        {
+          "_id": "53f75cfb891ec700002d3592",
+            "__v": 0,
+            "appId": "123456",
+            "development": false,
+            "iconUrl": "http://i.imgur.com/S0FAk3.png",
+            "ios": {
+                "appHmiType": "MEDIA",
+                "category": "Music",
+                "isMediaApplication": true,
+                "itunesUrl": "http://itunes.apple.com/app/awesome-music-app/id324384482?mt=8",
+                "sdlMaxVersion": "3.0",
+                "sdlMinVersion": "1.0",
+                "urlScheme": "awesomemusicapp://",
+                "languages": [
+                    {
+                        "default": {
+                            "ttsName": ["Default Music"],
+                            "vrSynonyms": [
+                                "Default App",
+                                "Default Awesomeness"
+                            ]
+                        }
+                    },
+                    {
+                        "EN-US": {
+                            "ttsName": ["Awesome Music"],
+                            "vrSynonyms": [
+                                "Awesome App",
+                                "Music Awesomeness"
+                            ]
+                        }
+                    },
+                    {
+                        "ES-ES": {
+                            "ttsName": ["música impresionante"],
+                            "vrSynonyms": [
+                                "aplicación impresionante",
+                                "buena música"
+                            ]
+                        }
+                    },
+                    {
+                        "FR-FR": {
+                            "ttsName": ["Impressionnant Musique"],
+                            "vrSynonyms": [
+                                "demande Impressionnant",
+                                "Musique Awesomeness"
+                            ]
+                        }
+                    }
+                ]
+            },
+            "name": "Awesome Music App"
+        }
+    ]
+}
