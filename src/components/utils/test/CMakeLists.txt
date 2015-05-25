@@ -55,6 +55,7 @@ set(testSources
   timer_thread_test.cc
   rwlock_posix_test.cc
   async_runner_test.cc
+  scope_guard_test.cc
 )
 
 if (ENABLE_LOG)
