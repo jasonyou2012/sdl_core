@@ -170,7 +170,6 @@ bool LifeCycle::StartComponents() {
           ciphers_list,
           verify_peer)) {
     LOG4CXX_ERROR(logger_, "CryptoManager initialization fail.");
-    return false;
   }
 #endif  // ENABLE_SECURITY
 

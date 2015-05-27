@@ -37,6 +37,7 @@
 #include "security_manager/security_manager.h"
 #include "utils/logger.h"
 #include "utils/atomic.h"
+#include "utils/scope_guard.h"
 
 #define TLS1_1_MINIMAL_VERSION            0x1000103fL
 #define CONST_SSL_METHOD_MINIMAL_VERSION  0x00909000L
@@ -46,6 +47,15 @@ namespace security_manager {
 CREATE_LOGGERPTR_GLOBAL(logger_, "CryptoManagerImpl")
 
 uint32_t CryptoManagerImpl::instance_count_ = 0;
+
+namespace {
+  void free_ctx(SSL_CTX** ctx) {
+    if (ctx) {
+      SSL_CTX_free(*ctx);
+      *ctx = NULL;
+    }
+  }
+}
 
 CryptoManagerImpl::CryptoManagerImpl()
     : context_(NULL), mode_(CLIENT) {
@@ -112,7 +122,20 @@ bool CryptoManagerImpl::Init(Mode mode,
       LOG4CXX_ERROR(logger_, "Unknown protocol: " << protocol);
       return false;
   }
+
+  if (context_) {
+    free_ctx(&context_);
+  }
+
   context_ = SSL_CTX_new(method);
+  if (!context_) {
+    const char *error = ERR_reason_error_string(ERR_get_error());
+    UNUSED(error);
+    LOG4CXX_ERROR(logger_,
+                  "Could not create OpenSSLContext " << (error ? error : ""));
+    return false;
+  }
+  utils::ScopeGuard guard = utils::MakeGuard(free_ctx, &context_);
 
   // Disable SSL2 as deprecated
   SSL_CTX_set_options(context_, SSL_OP_NO_SSLv2);
@@ -159,6 +182,7 @@ bool CryptoManagerImpl::Init(Mode mode,
       : SSL_VERIFY_NONE;
   SSL_CTX_set_verify(context_, verify_mode, NULL);
 
+  guard.Dismiss();
   return true;
 }
 
