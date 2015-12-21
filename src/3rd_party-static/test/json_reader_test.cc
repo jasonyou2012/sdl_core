@@ -64,11 +64,9 @@ class JSONReaderTest : public ::testing::Test {
 
   Json::Reader reader;
   Json::Value json;
-
 };
 
-void JSONReaderTest::SetUp()
-{
+void JSONReaderTest::SetUp() {
   normalString_ = "{\"field\" : \"value\" }";
   backspaceString_ = "{\"field\" : \"va\blue\" }";
   formfeedString_ = "{\"field\" : \"va\flue\" }";
@@ -98,7 +96,6 @@ TEST_F(JSONReaderTest, ParseBackspaceString) {
 
 TEST_F(JSONReaderTest, ParseFormFeedString) {
   ASSERT_TRUE(reader.parse(formfeedString_, json));
-
 }
 
 TEST_F(JSONReaderTest, ParseLineFeedString) {
@@ -157,5 +154,5 @@ TEST_F(JSONReaderTest, ParseClosingbracketString) {
 }
 
 }  //  namespace json_reader_test
-}  //  namespace components
+}  //  namespace third_party_libs
 }  //  namespace test

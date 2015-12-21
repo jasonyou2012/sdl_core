@@ -60,7 +60,8 @@ TEST(GeneratedInterfaceDbusTests, TestDbusDeserialization) {
     dbus::MessageWriter writer(msg);
     writer.PutUint16(22);
     writer.PutUint16(42);
-    dbus::MessageWriter array_writer(&writer, dbus::kArray, DBUS_TYPE_BYTE_AS_STRING);
+    dbus::MessageWriter
+        array_writer(&writer, dbus::kArray, DBUS_TYPE_BYTE_AS_STRING);
     array_writer.PutByte(11);
   }
   {

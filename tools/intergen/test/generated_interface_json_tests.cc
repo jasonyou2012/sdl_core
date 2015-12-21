@@ -44,9 +44,10 @@ using namespace rpc::test_rpc_interface;
 using Json::Value;
 
 class TestRequestHandlerMock: public request::Handler {
-public:
+ public:
   MOCK_METHOD1(HandleAddSubMenu, void(const request::AddSubMenu& params));
-  MOCK_METHOD1(HandleDiagnosticMessage, void(const request::DiagnosticMessage& params));
+  MOCK_METHOD1(HandleDiagnosticMessage,
+      void(const request::DiagnosticMessage& params));
   ~TestRequestHandlerMock() {}
 };
 
@@ -85,7 +86,8 @@ TEST_F(GeneratedInterfaceTests, FunctionWithoutParams) {
 
 TEST_F(GeneratedInterfaceTests, DefValueTest) {
   const char* org_json = "{\"menuID\":2,\"menuName\":\"Hello\"}";
-  const char* awaited_json = "{\"menuID\":2,\"menuName\":\"Hello\",\"position\":1000}\n";
+  const char* awaited_json =
+      "{\"menuID\":2,\"menuName\":\"Hello\",\"position\":1000}\n";
   Value json_value = JsonValue(org_json);
   request::AddSubMenu aasm(&json_value);
   ASSERT_TRUE(aasm.is_initialized());
@@ -98,7 +100,8 @@ TEST_F(GeneratedInterfaceTests, DefValueTest) {
 
 TEST_F(GeneratedInterfaceTests, MapTest) {
   const char* expected_json =
-  "{\"choiceID\":1,\"menuName\":\"Menu name\",\"vrCommands\":{\"one\":\"First value\",\"two\":\"Second value\"}}\n";
+  "{\"choiceID\":1,\"menuName\":\"Menu name\",\"vrComm"""
+  "ands\":{\"one\":\"First value\",\"two\":\"Second value\"}}\n";
 
   Choice choice;
   ASSERT_FALSE(choice.is_initialized());
@@ -212,14 +215,16 @@ TEST_F(GeneratedInterfaceTests, TestNullableEnumInitialization) {
   ASSERT_TRUE(strct_with_nullable.is_initialized());
   ASSERT_RPCTYPE_VALID(strct_with_nullable);
   std::string result = writer.write(strct_with_nullable.ToJsonValue());
-  const char* awaited_json1 = "{\"nonNullableEnum\":\"STATIC\",\"nullableEnum\":\"DYNAMIC\"}\n";
+  const char* awaited_json1 =
+      "{\"nonNullableEnum\":\"STATIC\",\"nullableEnum\":\"DYNAMIC\"}\n";
   ASSERT_EQ(awaited_json1, result);
 
   strct_with_nullable.nullableEnum.set_to_null();
   ASSERT_TRUE(strct_with_nullable.is_initialized());
   ASSERT_RPCTYPE_VALID(strct_with_nullable);
   result = writer.write(strct_with_nullable.ToJsonValue());
-  const char* awaited_json2 = "{\"nonNullableEnum\":\"STATIC\",\"nullableEnum\":null}\n";
+  const char* awaited_json2 =
+      "{\"nonNullableEnum\":\"STATIC\",\"nullableEnum\":null}\n";
   ASSERT_EQ(awaited_json2, result);
 }
 
@@ -252,7 +257,8 @@ TEST_F(GeneratedInterfaceTests, TestNullingStructWithNullableMapOfNullableInts) 
   ASSERT_EQ(awaited_json, result);
 }
 
-TEST_F(GeneratedInterfaceTests, TestNullingValueInStructWithNullableMapOfNullableInts) {
+TEST_F(GeneratedInterfaceTests,
+    TestNullingValueInStructWithNullableMapOfNullableInts) {
   StructWithNullableMapOfNullableInts nmoni;
   ASSERT_FALSE(nmoni.is_initialized());
   ASSERT_FALSE(nmoni.is_valid());
@@ -375,7 +381,8 @@ TEST_F(GeneratedInterfaceTests, StructWithFieldOfStructThatMightBeEmptyTest) {
   ASSERT_TRUE(sfme.is_initialized());
 }
 
-TEST_F(GeneratedInterfaceTests, StructWithFieldOfStructThatMightBeEmptyJsonNoValueTest) {
+TEST_F(GeneratedInterfaceTests,
+    StructWithFieldOfStructThatMightBeEmptyJsonNoValueTest) {
   StructWithFieldOfStructThatMightBeEmpty sfme;
   ASSERT_TRUE(sfme.struct_empty());
   ASSERT_FALSE(sfme.is_valid());
@@ -388,7 +395,8 @@ TEST_F(GeneratedInterfaceTests, StructWithFieldOfStructThatMightBeEmptyJsonNoVal
   ASSERT_EQ(expcected_json, writer.write(sfme.ToJsonValue()));
 }
 
-TEST_F(GeneratedInterfaceTests, StructWithFieldOfStructThatMightBeEmptyJsonHasValueTest) {
+TEST_F(GeneratedInterfaceTests,
+    StructWithFieldOfStructThatMightBeEmptyJsonHasValueTest) {
   const char* input_json = "{\"fieldThatMightBeEmpty\":{\"optionalInt\":12}}\n";
   Json::Value json_value = JsonValue(input_json);
   StructWithFieldOfStructThatMightBeEmpty sfme(&json_value);
@@ -445,7 +453,8 @@ TEST_F(GeneratedInterfaceTests, StructWithFieldOfOptionalMapNulledInJsonTest) {
   ASSERT_EQ(input_json, writer.write(snom.ToJsonValue()));
 }
 
-TEST_F(GeneratedInterfaceTests, StructWithFieldOfOptionalMapInitializedInJsonTest) {
+TEST_F(GeneratedInterfaceTests,
+    StructWithFieldOfOptionalMapInitializedInJsonTest) {
   const char* input_json = "{\"nullableOptionalIntMap\":{\"Hello\":2}}\n";
   Json::Value json_value = JsonValue(input_json);
   StructWithNullableOptionalMap snom(&json_value);
@@ -545,7 +554,8 @@ TEST_F(GeneratedInterfaceTests, ReportIncorrectlyInitializedMap1) {
   ASSERT_FALSE(smim.is_valid());
   rpc::ValidationReport report("smim");
   smim.ReportErrors(&report);
-  ASSERT_EQ("smim.mandatoryIntMap: object is not initialized\n", PrettyFormat(report));
+  ASSERT_EQ("smim.mandatoryIntMap: object is not initialized\n",
+      PrettyFormat(report));
 }
 
 TEST_F(GeneratedInterfaceTests, ReportIncorrectlyInitializedMap2) {
@@ -621,7 +631,8 @@ TEST_F(GeneratedInterfaceTests, FrankenstructFromInvalidJson) {
   ASSERT_EQ(2, fbmi.mandatoryInt);
   rpc::ValidationReport report("fbmi");
   fbmi.ReportErrors(&report);
-  ASSERT_EQ("fbmi[\"hello\"]: value initialized incorrectly\n", PrettyFormat(report));
+  ASSERT_EQ("fbmi[\"hello\"]: value initialized incorrectly\n",
+      PrettyFormat(report));
 }
 
 }  // namespace test
