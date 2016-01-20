@@ -1256,9 +1256,9 @@ TEST_F(ProtocolHandlerImplTest,
   AddSession();
   const bool is_final = true;
   const uint32_t total_data_size = 1;
-  uint8_t* data = new (std::nothrow) uint8_t[total_data_size];
+  std::vector<uint8_t> data(total_data_size);
   RawMessagePtr message = utils::MakeShared<RawMessage>(
-      connection_key, PROTOCOL_VERSION_3, data, total_data_size, kControl);
+      connection_key, PROTOCOL_VERSION_3, &data[0], total_data_size, kControl);
   // Expect getting pair from key from session observer
   EXPECT_CALL(session_observer_mock,
               PairFromKey(message->connection_key(), _, _))
@@ -1278,7 +1278,6 @@ TEST_F(ProtocolHandlerImplTest,
       .WillOnce(Return(E_SUCCESS));
   // Act
   protocol_handler_impl->SendMessageToMobileApp(message, is_final);
-  delete[] data;
 }
 
 TEST_F(ProtocolHandlerImplTest,
@@ -1287,9 +1286,9 @@ TEST_F(ProtocolHandlerImplTest,
   AddSession();
   const bool is_final = true;
   const uint32_t total_data_size = 1;
-  uint8_t* data = new (std::nothrow) uint8_t[total_data_size];
+  std::vector<uint8_t> data(total_data_size);
   RawMessagePtr message = utils::MakeShared<RawMessage>(
-      connection_key, PROTOCOL_VERSION_3, data, total_data_size, kRpc);
+      connection_key, PROTOCOL_VERSION_3, &data[0], total_data_size, kRpc);
   // Expect getting pair from key from session observer
   EXPECT_CALL(session_observer_mock,
               PairFromKey(message->connection_key(), _, _))
@@ -1310,7 +1309,6 @@ TEST_F(ProtocolHandlerImplTest,
       .WillOnce(Return(E_SUCCESS));
   // Act
   protocol_handler_impl->SendMessageToMobileApp(message, is_final);
-  delete[] data;
 }
 
 TEST_F(ProtocolHandlerImplTest, SendMessageToMobileApp_SendMultiframeMessage) {
@@ -1318,10 +1316,10 @@ TEST_F(ProtocolHandlerImplTest, SendMessageToMobileApp_SendMultiframeMessage) {
   AddSession();
   const bool is_final = true;
   const uint32_t total_data_size = MAXIMUM_FRAME_DATA_V2_SIZE * 2;
-  uint8_t* data = new (std::nothrow) uint8_t[total_data_size];
+  std::vector<uint8_t> data(total_data_size);
   const uint8_t first_consecutive_frame = 0x01;
   RawMessagePtr message = utils::MakeShared<RawMessage>(
-      connection_key, PROTOCOL_VERSION_3, data, total_data_size, kBulk);
+      connection_key, PROTOCOL_VERSION_3, &data[0], total_data_size, kBulk);
   // Expect getting pair from key from session observer
   EXPECT_CALL(session_observer_mock,
               PairFromKey(message->connection_key(), _, _))
@@ -1354,7 +1352,6 @@ TEST_F(ProtocolHandlerImplTest, SendMessageToMobileApp_SendMultiframeMessage) {
       .WillOnce(Return(E_SUCCESS));
   // Act
   protocol_handler_impl->SendMessageToMobileApp(message, is_final);
-  delete[] data;
 }
 
 }  // namespace test
