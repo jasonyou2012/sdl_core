@@ -31,3 +31,7 @@
  */
 
 #include "application_manager/application_manager_impl.h"
+
+ApplicationManagerImpl::ApplicationListUpdateTimer::ApplicationListUpdateTimer(
+    ApplicationManagerImpl* callee)
+  : timer::Timer("AM ListUpdater", new OnApplicationListUpdateTask(callee)) {}
