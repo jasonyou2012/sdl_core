@@ -201,13 +201,6 @@ class ProtocolHandlerImplTest : public ::testing::Test {
   uint32_t message_id;
   std::vector<uint8_t> some_data;
   // Strict mocks (same as all methods EXPECT_CALL().Times(0))
-<<<<<<< HEAD
-  testing::StrictMock<protocol_handler_test::TransportManagerMock> transport_manager_mock;
-  testing::StrictMock<protocol_handler_test::SessionObserverMock> session_observer_mock;
-#ifdef ENABLE_SECURITY
-  testing::NiceMock<protocol_handler_test::SecurityManagerMock> security_manager_mock;
-  testing::NiceMock<protocol_handler_test::SSLContextMock> ssl_context_mock;
-=======
   testing::StrictMock<transport_manager_test::MockTransportManager>
       transport_manager_mock;
   testing::StrictMock<MockSessionObserver> session_observer_mock;
@@ -215,7 +208,6 @@ class ProtocolHandlerImplTest : public ::testing::Test {
   testing::NiceMock<security_manager_test::MockSecurityManager>
       security_manager_mock;
   testing::NiceMock<security_manager_test::MockSSLContext> ssl_context_mock;
->>>>>>> Use formatter and remove redundant Times(1)
 #endif  // ENABLE_SECURITY
 };
 
